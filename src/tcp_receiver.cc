@@ -19,8 +19,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
   }
   // 处理 SYN
   if(message.SYN){
-    if(!Synflag_){
-        Synflag_ = true;
+    if(!zero_point.has_value()){
         zero_point = message.seqno;
         message.seqno = message.seqno + 1; //如果 只有一个syn， 那么将传递 ""
     }else { //如果之前已经有 syn了，则还是用原来的哪个,应该不会出现这种情况，因为下一个是基于send发送的
@@ -28,11 +27,11 @@ void TCPReceiver::receive( TCPSenderMessage message )
     }
   }
 
-  if(!Synflag_){ //如果一直没有 syn 返回
+  if(!zero_point.has_value()){ //如果一直没有 syn 返回
     return;
   }
 // 此时，已经有syn了,并且全部指向字符串
-  first_index = message.seqno.unwrap(zero_point, reassembler_.writer().bytes_pushed());  //转化为ab seqno
+  first_index = message.seqno.unwrap(zero_point.value(), reassembler_.writer().bytes_pushed());  //转化为ab seqno
   if(first_index == 0){ //byte with invalid stream index should be ignored，有个测试 先传递 2345 syn,然后 2345 a,这个a不合法
     return;
   }else{
@@ -42,7 +41,7 @@ void TCPReceiver::receive( TCPSenderMessage message )
   is_last_substring = message.FIN;
   reassembler_.insert(first_index, move(message.payload), is_last_substring);
 
-  ackon_ = zero_point + Synflag_+ reassembler_.writer().bytes_pushed() + reassembler_.writer().is_closed();
+  ackon_ = zero_point.value() + zero_point.has_value()+ reassembler_.writer().bytes_pushed() + reassembler_.writer().is_closed();
 
 }
 
@@ -51,8 +50,8 @@ TCPReceiverMessage TCPReceiver::send() const
   // Your code here.
   TCPReceiverMessage ReceiverMessage;
   
-  ReceiverMessage.RST = reassembler_.reader().has_error();;
-  if(Synflag_){
+  ReceiverMessage.RST = reassembler_.reader().has_error();
+  if(zero_point.has_value()){
     ReceiverMessage.ackno = ackon_;
   }
 

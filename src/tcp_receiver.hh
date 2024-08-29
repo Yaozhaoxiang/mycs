@@ -28,9 +28,9 @@ public:
 private:
 
   Wrap32 ackon_{ 0 }; // 需要的*下一个*序列号
-
-  Wrap32 zero_point { 0 }; // 当前的 syn
-  bool Synflag_ { false }; // 是否有 syn
+  std::optional<Wrap32> zero_point { };
+//   Wrap32 zero_point { 0 }; // 当前的 syn
+//   bool Synflag_ { false }; // 是否有 syn
 
   Reassembler reassembler_;
 };
