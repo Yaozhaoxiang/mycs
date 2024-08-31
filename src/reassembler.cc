@@ -11,7 +11,7 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
 //   (void)is_last_substring;
   //插入data
   if(data.empty()){
-    if(is_last_substring)
+    if(is_last_substring) // 所有的数据全都接收完成，此后就不需要发送端发送数据了
         output_.writer().close();
     return;
   }
