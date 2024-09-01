@@ -4,13 +4,26 @@
 #include <iostream>
 #include <span>
 #include <string>
-
+#include "tcp_minnow_socket.hh"
 using namespace std;
 
 void get_URL( const string& host, const string& path )
 {
-  cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
-  cerr << "Warning: get_URL() has not been implemented yet.\n";
+    CS144TCPSocket client_sock;
+    string buf;
+    client_sock.connect(Address(host,"http"));
+    client_sock.write("GET "+ path + " HTTP/1.1\r\n");
+    client_sock.write("Host: "+ host + "\r\n");
+    client_sock.write("Connection: close\r\n\r\n");
+
+    //client_sock.shutdown(SHUT_WR);
+    while(!client_sock.eof())
+    {
+        client_sock.read(buf);
+        cout << buf;
+    }
+    client_sock.wait_until_closed();
+    //cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
 }
 
 int main( int argc, char* argv[] )
