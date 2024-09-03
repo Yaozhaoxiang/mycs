@@ -1,7 +1,9 @@
 #pragma once
 
 #include <queue>
-
+#include <utility>
+#include <list>
+#include <unordered_map>
 #include "address.hh"
 #include "ethernet_frame.hh"
 #include "ipv4_datagram.hh"
@@ -34,6 +36,7 @@ public:
   class OutputPort
   {
   public:
+    // 发送以太网帧
     virtual void transmit( const NetworkInterface& sender, const EthernetFrame& frame ) = 0;
     virtual ~OutputPort() = default;
   };
@@ -48,6 +51,7 @@ public:
   // Sends an Internet datagram, encapsulated in an Ethernet frame (if it knows the Ethernet destination
   // address). Will need to use [ARP](\ref rfc::rfc826) to look up the Ethernet destination address for the next
   // hop. Sending is accomplished by calling `transmit()` (a member variable) on the frame.
+  // 这个接口的任务是将此数据报转换为以太网帧并（最终）发送出去。
   void send_datagram( const InternetDatagram& dgram, const Address& next_hop );
 
   // Receives an Ethernet frame and responds appropriately.
@@ -81,4 +85,19 @@ private:
 
   // Datagrams that have been received
   std::queue<InternetDatagram> datagrams_received_ {};
+
+std::unordered_map<uint32_t,std::pair<EthernetAddress, uint64_t>> _ip_to_ethernet {}; //映射表,TTL=30s
+const size_t _arp_entry_default_ttl = 30 * 1000;
+
+std::unordered_map<uint32_t, size_t> _waiting_arp_respons_ip_addr {}; //arp 请求时间
+const size_t _arp_response_default_ttl = 5 * 1000;
+
+std::list<std::pair<Address, InternetDatagram>> _waiting_arp_internet_datagrams{}; // 等待 ARP 报文返回的待处理 IP 报文
+
+
+EthernetFrame make_frame( const EthernetAddress& src,
+                          const EthernetAddress& dst,
+                          const uint16_t type,
+                          std::vector<std::string> payload );
+
 };
