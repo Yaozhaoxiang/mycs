@@ -1,5 +1,7 @@
 #pragma once
 
+#include <compare>
+#include <optional>
 #include <queue>
 #include <utility>
 #include <list>
@@ -86,13 +88,27 @@ private:
   // Datagrams that have been received
   std::queue<InternetDatagram> datagrams_received_ {};
 
-std::unordered_map<uint32_t,std::pair<EthernetAddress, uint64_t>> _ip_to_ethernet {}; //映射表,TTL=30s
-const size_t _arp_entry_default_ttl = 30 * 1000;
+//************** */
+class address_mapping{
+    EthernetAddress ether_addr_; 
+    size_t timer_;
+public:
+    explicit address_mapping(EthernetAddress ether_addr) : ether_addr_(ether_addr), timer_{}{};
 
-std::unordered_map<uint32_t, size_t> _waiting_arp_respons_ip_addr {}; //arp 请求时间
-const size_t _arp_response_default_ttl = 5 * 1000;
+    EthernetAddress get_ether() const noexcept{return ether_addr_;};
+    address_mapping& operator+=(const size_t ms_time_passed) noexcept {
+        return tick(ms_time_passed);
+    }
+    auto operator<=>(const size_t deadline)const {return timer_ <=> deadline;}
+    address_mapping& tick(const size_t ms_time_passed) noexcept{
+        timer_ += ms_time_passed;
+        return *this;
+    }
 
-std::list<std::pair<Address, InternetDatagram>> _waiting_arp_internet_datagrams{}; // 等待 ARP 报文返回的待处理 IP 报文
+};
+std::unordered_map<uint32_t, address_mapping> mapping_table_ {}; //映射表
+std::unordered_map<uint32_t, size_t> arp_recorder_ {}; //记录每个ip的请求时间
+std::unordered_map<uint32_t, InternetDatagram> dgrams_waiting_addr_ {}; //未发送数据报
 
 
 EthernetFrame make_frame( const EthernetAddress& src,
@@ -100,4 +116,10 @@ EthernetFrame make_frame( const EthernetAddress& src,
                           const uint16_t type,
                           std::vector<std::string> payload );
 
+ARPMessage make_arp( const uint16_t opcode,
+                     EthernetAddress sender_ethernet_address,
+                     const uint32_t& sender_ip_address,
+                     EthernetAddress target_ethernet_address,
+                     const uint32_t& target_ip_address );
 };
+
