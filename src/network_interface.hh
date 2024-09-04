@@ -1,7 +1,11 @@
 #pragma once
 
+#include <compare>
+#include <optional>
 #include <queue>
-
+#include <utility>
+#include <list>
+#include <unordered_map>
 #include "address.hh"
 #include "ethernet_frame.hh"
 #include "ipv4_datagram.hh"
@@ -34,6 +38,7 @@ public:
   class OutputPort
   {
   public:
+    // 发送以太网帧
     virtual void transmit( const NetworkInterface& sender, const EthernetFrame& frame ) = 0;
     virtual ~OutputPort() = default;
   };
@@ -48,6 +53,7 @@ public:
   // Sends an Internet datagram, encapsulated in an Ethernet frame (if it knows the Ethernet destination
   // address). Will need to use [ARP](\ref rfc::rfc826) to look up the Ethernet destination address for the next
   // hop. Sending is accomplished by calling `transmit()` (a member variable) on the frame.
+  // 这个接口的任务是将此数据报转换为以太网帧并（最终）发送出去。
   void send_datagram( const InternetDatagram& dgram, const Address& next_hop );
 
   // Receives an Ethernet frame and responds appropriately.
@@ -81,4 +87,39 @@ private:
 
   // Datagrams that have been received
   std::queue<InternetDatagram> datagrams_received_ {};
+
+//************** */
+class address_mapping{
+    EthernetAddress ether_addr_; 
+    size_t timer_;
+public:
+    explicit address_mapping(EthernetAddress ether_addr) : ether_addr_(ether_addr), timer_{}{};
+
+    EthernetAddress get_ether() const noexcept{return ether_addr_;};
+    address_mapping& operator+=(const size_t ms_time_passed) noexcept {
+        return tick(ms_time_passed);
+    }
+    auto operator<=>(const size_t deadline)const {return timer_ <=> deadline;}
+    address_mapping& tick(const size_t ms_time_passed) noexcept{
+        timer_ += ms_time_passed;
+        return *this;
+    }
+
 };
+std::unordered_map<uint32_t, address_mapping> mapping_table_ {}; //映射表
+std::unordered_map<uint32_t, size_t> arp_recorder_ {}; //记录每个ip的请求时间
+std::unordered_multimap<uint32_t, InternetDatagram> dgrams_waiting_addr_ {}; //未发送数据报
+
+
+EthernetFrame make_frame( const EthernetAddress& src,
+                          const EthernetAddress& dst,
+                          const uint16_t type,
+                          std::vector<std::string> payload );
+
+ARPMessage make_arp( const uint16_t opcode,
+                     EthernetAddress sender_ethernet_address,
+                     const uint32_t& sender_ip_address,
+                     EthernetAddress target_ethernet_address,
+                     const uint32_t& target_ip_address );
+};
+

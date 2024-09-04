@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-
+#include <queue>    
 class Reader;
 class Writer;
 
@@ -25,6 +25,14 @@ protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
   uint64_t capacity_;
   bool error_ {};
+  //流是否关闭
+  bool closed_ { false };
+//存取数据
+  std::queue<std::string> buffer_data {};
+  std::queue<std::string_view> buffer_view {};
+//输入的字节数
+  uint64_t bytes_pushed_ { 0 }; // 已写入的字节数
+  uint64_t bytes_popped_ { 0 }; // 已弹出的字节数
 };
 
 class Writer : public ByteStream
