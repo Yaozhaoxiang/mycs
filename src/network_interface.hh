@@ -108,7 +108,7 @@ public:
 };
 std::unordered_map<uint32_t, address_mapping> mapping_table_ {}; //映射表
 std::unordered_map<uint32_t, size_t> arp_recorder_ {}; //记录每个ip的请求时间
-std::unordered_map<uint32_t, InternetDatagram> dgrams_waiting_addr_ {}; //未发送数据报
+std::unordered_multimap<uint32_t, InternetDatagram> dgrams_waiting_addr_ {}; //未发送数据报
 
 
 EthernetFrame make_frame( const EthernetAddress& src,
