@@ -2,7 +2,8 @@
 
 #include <memory>
 #include <optional>
-
+#include <vector>
+#include <optional>
 #include "exception.hh"
 #include "network_interface.hh"
 
@@ -24,6 +25,8 @@ public:
   std::shared_ptr<NetworkInterface> interface( const size_t N ) { return _interfaces.at( N ); }
 
   // Add a route (a forwarding rule)
+  //将路由添加到路由表中。你需要在 Router 类中添加一个私有成员数据结构来存储这些信息。
+  //此方法只需要保存路由，以便以后使用。
   void add_route( uint32_t route_prefix,
                   uint8_t prefix_length,
                   std::optional<Address> next_hop,
@@ -34,5 +37,22 @@ public:
 
 private:
   // The router's collection of network interfaces
-  std::vector<std::shared_ptr<NetworkInterface>> _interfaces {};
+  std::vector<std::shared_ptr<NetworkInterface>> _interfaces {}; //接口
+
+class entry{
+public:
+    uint32_t route_prefix_ {};
+    uint8_t prefix_length_ {};
+    std::optional<Address> next_hop_;
+    size_t interface_num_ {};
+
+    entry(uint32_t route_prefix, uint8_t prefix_length, std::optional<Address> next_hop, size_t interface_num) :
+    route_prefix_(route_prefix),
+    prefix_length_(prefix_length),
+    next_hop_(next_hop),
+    interface_num_(interface_num)
+    {}
+};
+std::vector<entry> entry_table_ {};
+
 };
